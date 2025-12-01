@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy import BigInteger, String, Text, DateTime, Boolean, ForeignKey, ARRAY, JSON
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from datetime import datetime
@@ -46,59 +46,27 @@ class User(Base):
 
 
 class Event(Base):
-    """Модель ивента (воспоминания с фотографией)"""
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     creator_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
     partner_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
-    photo_file_id: Mapped[str] = mapped_column(String(500), nullable=False)  # file_id из Telegram
+
+    photo_file_id: Mapped[Optional[str]] = mapped_column(String(500))
     question: Mapped[str] = mapped_column(Text, nullable=False)
+    options: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=False)
+    correct_option_id: Mapped[int] = mapped_column(nullable=False)
     correct_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    # Связи
-    creator: Mapped["User"] = relationship(
-        "User",
-        back_populates="created_events",
-        foreign_keys=[creator_id]
-    )
+    explanation: Mapped[Optional[str]] = mapped_column(Text)
+    telegram_poll_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)  # Удален quiz_message_id
 
-    partner_user: Mapped["User"] = relationship(
-        "User",
-        back_populates="partner_events",
-        foreign_keys=[partner_id]
-    )
-
-    # Ответы на ивент
-    answers: Mapped[List["EventAnswer"]] = relationship(
-        "EventAnswer",
-        back_populates="event",
-        cascade="all, delete-orphan"
-    )
-
-    # Поздравление, связанное с ивентом
-    congratulation: Mapped[Optional["Congratulation"]] = relationship(
-        "Congratulation",
-        back_populates="event",
-        uselist=False
-    )
-
-
-class EventAnswer(Base):
-    """Модель ответа на ивент (варианты даты)"""
-    __tablename__ = "event_answers"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False)
-    answer_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    is_correct: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    # Связи
-    event: Mapped["Event"] = relationship("Event", back_populates="answers")
-
+    # Упрощенные связи
+    creator = relationship("User", foreign_keys=[creator_id], back_populates="created_events")
+    partner_user = relationship("User", foreign_keys=[partner_id], back_populates="partner_events")
+    congratulation = relationship("Congratulation", back_populates="event", uselist=False)  # Добавлено
 
 class Congratulation(Base):
     """Модель поздравления"""
