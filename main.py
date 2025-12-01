@@ -4,13 +4,15 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from contextlib import asynccontextmanager
 from config.config import Config, load_config
-from database.database import init_db
+from database.database import init_db, get_session
 from handlers.other import other_router
 from handlers.user import user_router
 from keyboards.game_keyboards import set_main_menu
 
 logger = logging.getLogger(__name__)
+
 
 async def main():
     config: Config = load_config()
@@ -22,17 +24,16 @@ async def main():
 
     logger.info("Starting bot")
 
+    # Инициализируем базу данных
+    await init_db()
+
     bot = Bot(
         token=config.bot.token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher()
 
-    # Инициализируем "базу данных"
-    db: dict = init_db()
-
-    dp.workflow_data.update(db=db)
-
+    # Устанавливаем главное меню
     await set_main_menu(bot)
 
     # Регистрируем роутеры в диспетчере
