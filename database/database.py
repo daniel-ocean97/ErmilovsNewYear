@@ -13,6 +13,8 @@ engine = create_async_engine(
 # Создаем фабрику сессий
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
+__all__ = ['async_session', 'get_session', 'init_db']
+
 async def init_db():
     """Инициализация базы данных, создание таблиц"""
     async with engine.begin() as conn:
@@ -23,3 +25,7 @@ async def get_session() -> AsyncSession:
     """Получение сессии для работы с базой данных"""
     async with async_session() as session:
         yield session
+
+
+
+__all__ = ['async_session', 'get_session', 'init_db']

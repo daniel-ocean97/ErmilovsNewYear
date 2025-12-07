@@ -12,8 +12,8 @@ class DatabaseMiddleware(BaseMiddleware):
 
     async def __call__(
             self,
-            handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-            event: Message | CallbackQuery,
+            handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
+            event: Any,  # Любой тип события
             data: Dict[str, Any]
     ) -> Any:
         # Создаем новую сессию для каждого запроса

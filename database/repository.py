@@ -59,18 +59,19 @@ class EventRepository:
             question: str,
             options: list[str],
             correct_option_id: int,
-            correct_date: datetime,
             telegram_poll_id: str = None,
             photo_file_id: str = None,
             explanation: str = None
     ) -> Event:
+        """
+        Создать ивент БЕЗ даты
+        """
         event = Event(
             creator_id=creator_id,
             partner_id=partner_id,
             question=question,
             options=options,
             correct_option_id=correct_option_id,
-            correct_date=correct_date,
             telegram_poll_id=telegram_poll_id,
             photo_file_id=photo_file_id,
             explanation=explanation
@@ -94,11 +95,10 @@ class CongratulationRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create_congratulation(self, event_id: int, sender_id: int,
+    async def create_congratulation(self, sender_id: int,
                                     message: str, photo_file_id: str = None) -> Congratulation:
         """Создать поздравление"""
         congratulation = Congratulation(
-            event_id=event_id,
             sender_id=sender_id,
             message=message,
             photo_file_id=photo_file_id

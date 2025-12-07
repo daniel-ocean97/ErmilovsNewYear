@@ -46,6 +46,7 @@ class User(Base):
 
 
 class Event(Base):
+    """Модель ивента (воспоминания с фотографией)"""
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -56,29 +57,26 @@ class Event(Base):
     question: Mapped[str] = mapped_column(Text, nullable=False)
     options: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=False)
     correct_option_id: Mapped[int] = mapped_column(nullable=False)
-    correct_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     explanation: Mapped[Optional[str]] = mapped_column(Text)
-    telegram_poll_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)  # Удален quiz_message_id
+    telegram_poll_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
 
-    # Упрощенные связи
-    creator = relationship("User", foreign_keys=[creator_id], back_populates="created_events")
-    partner_user = relationship("User", foreign_keys=[partner_id], back_populates="partner_events")
-    congratulation = relationship("Congratulation", back_populates="event", uselist=False)  # Добавлено
+    creator: Mapped["User"] = relationship("User", foreign_keys=[creator_id], back_populates="created_events")
+    partner_user: Mapped["User"] = relationship("User", foreign_keys=[partner_id], back_populates="partner_events")
+
+
 
 class Congratulation(Base):
-    """Модель поздравления"""
     __tablename__ = "congratulations"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), unique=True, nullable=False)
     sender_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     photo_file_id: Mapped[Optional[str]] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
-    # Связи
-    event: Mapped["Event"] = relationship("Event", back_populates="congratulation")
+    # Только связь с пользователем
     sender: Mapped["User"] = relationship("User")

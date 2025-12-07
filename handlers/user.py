@@ -1,10 +1,8 @@
 from aiogram import F, Router, types
 from aiogram.filters import Command, CommandStart
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
-from aiogram.fsm.context import FSMContext
 from database.repository import UserRepository
-from database.database import get_session
 from keyboards.add_patrner import partner_keyboard
 from lexicon.lexicon import LEXICON
 
@@ -13,10 +11,7 @@ user_router = Router()
 
 @user_router.message(CommandStart())
 async def process_start_command(message: Message, session: AsyncSession):
-    text = LEXICON[message.text]
-    await message.answer(text=text)
-
-    # Работа с базой данных через репозиторий
+    # 1. Работа с базой данных
     user_repo = UserRepository(session)
     user = await user_repo.get_user(message.from_user.id)
 
@@ -28,12 +23,24 @@ async def process_start_command(message: Message, session: AsyncSession):
             first_name=message.from_user.first_name,
             last_name=message.from_user.last_name
         )
-        await message.answer("Вы успешно зарегистрированы! 🎉")
+        # Отправляем сообщение о регистрации
+        await message.answer("🎉 Вы успешно зарегистрированы!")
+    else:
+        # Пользователь уже зарегистрирован
+        await message.answer("👋 С возвращением!")
+
+    # 2. Отправляем ТОЛЬКО приветственное сообщение БЕЗ клавиатуры
+    text = LEXICON["/start"]
+
+    await message.answer(
+        text=text,
+        parse_mode="HTML"
+    )
 
 
 @user_router.message(Command(commands="help"))
 async def process_help_command(message: Message):
-    await message.answer(LEXICON[message.text])
+    await message.answer(LEXICON["/help"], parse_mode="HTML")
 
 
 @user_router.message(Command(commands="partner"))
@@ -42,7 +49,7 @@ async def process_partner_command(message: Message, session: AsyncSession):
     user = await user_repo.get_user(message.from_user.id)
 
     if not user:
-        await message.answer("Сначала зарегистрируйтесь с помощью /start")
+        await message.answer("Сначала зарегистрируйся с помощью /start")
         return
 
     if user.partner_id:
@@ -75,7 +82,7 @@ async def process_user_shared(message: Message, session: AsyncSession):
             await message.bot.send_message(
                 chat_id=message.user_shared.user_id,
                 text=f"🎉 {message.from_user.first_name} выбрал(а) вас своим партнером "
-                     f"для подведения итогов года! Для начала общения используйте /start"
+                     f"для подведения итогов года! Для начала приключения используй /start"
             )
         except Exception as e:
             print(f"Не удалось отправить сообщение партнеру: {e}")
