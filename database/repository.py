@@ -107,3 +107,13 @@ class CongratulationRepository:
         await self.session.commit()
         await self.session.refresh(congratulation)
         return congratulation
+
+    async def list_by_sender(self, sender_id: int) -> list[Congratulation]:
+        """Получить все поздравления пользователя, новые первыми"""
+        stmt = (
+            select(Congratulation)
+            .where(Congratulation.sender_id == sender_id)
+            .order_by(Congratulation.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())

@@ -35,8 +35,8 @@ def load_config(path: str | None = None) -> Config:
     return Config(
         bot=TgBot(token=env("BOT_TOKEN")),
         db=DatabaseConfig(
-            host=env("DB_HOST", "localhost"),
-            port=env.int("DB_PORT", 5432),
+            host=env("DB_HOST"),
+            port=env.int("DB_PORT"),
             user=env("DB_USER", "postgres"),
             password=env("DB_PASSWORD", ""),
             database=env("DB_NAME", "year_summary_bot"),

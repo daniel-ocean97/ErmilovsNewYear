@@ -2,9 +2,10 @@ from aiogram import F, Router, types
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.repository import UserRepository
+from database.repository import UserRepository, CongratulationRepository
 from keyboards.add_patrner import partner_keyboard
 from lexicon.lexicon import LEXICON
+from datetime import datetime
 
 user_router = Router()
 
@@ -91,3 +92,31 @@ async def process_user_shared(message: Message, session: AsyncSession):
             text='Партнер не найден в базе данных. Попросите его начать с /start',
             reply_markup=types.ReplyKeyboardRemove()
         )
+
+
+@user_router.message(Command(commands="my_congratulations"))
+async def process_my_congratulations(message: Message, session: AsyncSession):
+    """Показать все собственные поздравления пользователя"""
+    user_repo = UserRepository(session)
+    user = await user_repo.get_user(message.from_user.id)
+
+    if not user:
+        await message.answer("Сначала зарегистрируйся с помощью /start")
+        return
+
+    congr_repo = CongratulationRepository(session)
+    congrats = await congr_repo.list_by_sender(user.id)
+
+    if not congrats:
+        await message.answer("У тебя пока нет поздравлений. Добавь первое через /congratulate")
+        return
+
+    lines = []
+    for idx, congrat in enumerate(congrats, start=1):
+        created = congrat.created_at.strftime("%d.%m.%Y %H:%M") if isinstance(congrat.created_at, datetime) else ""
+        suffix = " (с фото)" if congrat.photo_file_id else ""
+        lines.append(f"{idx}. {congrat.message}{suffix}{f' — {created}' if created else ''}")
+
+    await message.answer(
+        "📦 Твои поздравления:\n\n" + "\n\n".join(lines)
+    )
