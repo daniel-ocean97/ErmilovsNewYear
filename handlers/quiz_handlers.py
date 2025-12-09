@@ -179,56 +179,6 @@ async def process_event_options(
 #     except ValueError:
 #         await message.answer("❌ Неверный формат даты. Используйте ДД.ММ.ГГГГ")
 
-@quiz_router.poll_answer()
-async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
-    """
-    Обработчик ответов на викторину
-    """
-    from sqlalchemy import select, update
-
-    async with async_session() as session:
-        # 1. Находим событие по ID викторины
-        stmt = select(Event).where(Event.telegram_poll_id == poll_answer.poll_id)
-        result = await session.execute(stmt)
-        event = result.scalar_one_or_none()
-
-        if not event:
-            return
-
-        # 2. Находим пользователей
-        creator_stmt = select(User).where(User.id == event.creator_id)
-        creator_result = await session.execute(creator_stmt)
-        creator = creator_result.scalar_one_or_none()
-
-        if not creator:
-            return
-
-        # 3. Проверяем ответ
-        user_answer = poll_answer.option_ids[0] if poll_answer.option_ids else None
-        is_correct = (user_answer == event.correct_option_id)
-
-        # 4. Отправляем сообщения
-        if is_correct:
-            await bot.send_message(
-                chat_id=creator.telegram_id,
-                text=f"🎯 {poll_answer.user.first_name} правильно угадал(а) дату!\n"
-                     f"Теперь ты должен создать поздравление нажав на /congratulate"
-            )
-
-
-            # 5. Обновляем статус
-            update_stmt = update(Event).where(Event.id == event.id).values(is_completed=True)
-            await session.execute(update_stmt)
-            await session.commit()
-        else:
-            explanation = event.correct_option_id
-            await bot.send_message(
-                chat_id=poll_answer.user.id,
-                text=f"❌ Неправильно. Правильный ответ - {explanation}\n"
-                     f"Теперь ты должен создать поздравление нажав на /congratulate"
-            )
-
-
 @quiz_router.callback_query(CreateEventStates.waiting_for_correct_option, F.data.startswith("correct_"))
 async def create_and_send_quiz(
         callback: CallbackQuery,
