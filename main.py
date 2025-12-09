@@ -61,7 +61,7 @@ async def main():
         router.message.middleware(DatabaseMiddleware())
         router.callback_query.middleware(DatabaseMiddleware())
 
-    # Регистрируем роутеры (menu_router больше не нужен)
+    # Регистрируем роутеры
     dp.include_router(user_router)  # 1. Основные команды (/start, /help, /partner)
     dp.include_router(quiz_router)  # 2. Викторины
     dp.include_router(congratulation_router)  # 3. Поздравления
