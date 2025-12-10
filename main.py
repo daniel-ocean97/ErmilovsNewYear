@@ -4,7 +4,11 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeAllPrivateChats
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeDefault,
+    BotCommandScopeAllPrivateChats,
+)
 from config.config import Config, load_config
 from database.database import init_db
 from handlers.congratulation_handlers import congratulation_router
@@ -12,8 +16,20 @@ from handlers.other import other_router
 from handlers.user import user_router
 from handlers.quiz_handlers import quiz_router
 from middleware.database import DatabaseMiddleware
+from database.repository import get_all_chat_ids, remove_chat_id
 
 logger = logging.getLogger(__name__)
+
+
+async def notify_all(bot: Bot, text: str):
+    "Оповещение всех пользователей об обновлении"
+    for chat_id in await get_all_chat_ids():
+        try:
+            await bot.send_message(chat_id, text)
+            await asyncio.sleep(0.04)  # ~25 msg/сек
+        except Exception as e:
+            if "Forbidden" in str(e) or "403" in str(e):
+                await remove_chat_id(chat_id)
 
 
 async def set_bot_commands(bot: Bot):
@@ -28,7 +44,9 @@ async def set_bot_commands(bot: Bot):
     ]
     logger.info(f"Setting commands: {commands}")
     try:
-        result = await bot.set_my_commands(commands=commands, scope=BotCommandScopeAllPrivateChats())
+        result = await bot.set_my_commands(
+            commands=commands, scope=BotCommandScopeAllPrivateChats()
+        )
         logger.info(f"Commands set successfully: {result}")
         return True
     except Exception as e:
@@ -75,6 +93,11 @@ async def main():
         logger.warning(f"Could not set bot commands: {e}")
 
     await bot.delete_webhook(drop_pending_updates=True)
+    # Оповещение всех пользователей об обновлении
+    await notify_all(
+        bot,
+        "Вышло обновление! 'Поздравления' заменены на 'Послания' (для Риты)\n Также исправлено уведомление, если партнер не правильно овтетил",
+    )
     await dp.start_polling(bot)
 
 

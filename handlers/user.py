@@ -22,7 +22,7 @@ async def process_start_command(message: Message, session: AsyncSession):
             telegram_id=message.from_user.id,
             username=message.from_user.username,
             first_name=message.from_user.first_name,
-            last_name=message.from_user.last_name
+            last_name=message.from_user.last_name,
         )
         # Отправляем сообщение о регистрации
         await message.answer("🎉 Вы успешно зарегистрированы!")
@@ -33,10 +33,7 @@ async def process_start_command(message: Message, session: AsyncSession):
     # 2. Отправляем ТОЛЬКО приветственное сообщение БЕЗ клавиатуры
     text = LEXICON["/start"]
 
-    await message.answer(
-        text=text,
-        parse_mode="HTML"
-    )
+    await message.answer(text=text, parse_mode="HTML")
 
 
 @user_router.message(Command(commands="help"))
@@ -57,7 +54,9 @@ async def process_partner_command(message: Message, session: AsyncSession):
         partner = await user_repo.get_partner(message.from_user.id)
         await message.answer(f"Ваш партнер уже выбран: {partner.first_name}")
     else:
-        await message.answer(text='Выбери своего партнера', reply_markup=partner_keyboard)
+        await message.answer(
+            text="Выбери своего партнера", reply_markup=partner_keyboard
+        )
 
 
 @user_router.message(F.user_shared)
@@ -68,18 +67,16 @@ async def process_user_shared(message: Message, session: AsyncSession):
 
     # Устанавливаем партнера
     success = await user_repo.set_partner(
-        user_id=message.from_user.id,
-        partner_telegram_id=message.user_shared.user_id
+        user_id=message.from_user.id, partner_telegram_id=message.user_shared.user_id
     )
     partner_succes = await user_repo.set_partner(
-        user_id=message.user_shared.user_id,
-        partner_telegram_id=message.from_user.id
+        user_id=message.user_shared.user_id, partner_telegram_id=message.from_user.id
     )
 
     if success and partner_succes:
         await message.answer(
-            text=f'Отлично! Теперь {message.user_shared.first_name} ваш партнер в этой игре 🎯',
-            reply_markup=types.ReplyKeyboardRemove()
+            text=f"Отлично! Теперь {message.user_shared.first_name} ваш партнер в этой игре 🎯",
+            reply_markup=types.ReplyKeyboardRemove(),
         )
 
         # Отправляем приглашение партнеру
@@ -87,14 +84,14 @@ async def process_user_shared(message: Message, session: AsyncSession):
             await message.bot.send_message(
                 chat_id=message.user_shared.user_id,
                 text=f"🎉 {message.from_user.first_name} теперь ваш партнер в этой игре "
-                     f"для подведения итогов года! Для начала приключения используй /create_event"
+                f"для подведения итогов года! Для начала приключения используй /create_event",
             )
         except Exception as e:
             print(f"Не удалось отправить сообщение партнеру: {e}")
     else:
         await message.answer(
-            text='Партнер не найден в базе данных. Отправте ссылку на бота и попросите его начать с /start',
-            reply_markup=types.ReplyKeyboardRemove()
+            text="Партнер не найден в базе данных. Отправте ссылку на бота и попросите его начать с /start",
+            reply_markup=types.ReplyKeyboardRemove(),
         )
 
 
@@ -112,15 +109,21 @@ async def process_my_congratulations(message: Message, session: AsyncSession):
     congrats = await congr_repo.list_by_sender(user.id)
 
     if not congrats:
-        await message.answer("У тебя пока нет посланий. Добавь первое через /congratulate")
+        await message.answer(
+            "У тебя пока нет посланий. Добавь первое через /congratulate"
+        )
         return
 
     lines = []
     for idx, congrat in enumerate(congrats, start=1):
-        created = congrat.created_at.strftime("%d.%m.%Y %H:%M") if isinstance(congrat.created_at, datetime) else ""
+        created = (
+            congrat.created_at.strftime("%d.%m.%Y %H:%M")
+            if isinstance(congrat.created_at, datetime)
+            else ""
+        )
         suffix = " (с фото)" if congrat.photo_file_id else ""
-        lines.append(f"{idx}. {congrat.message}{suffix}{f' — {created}' if created else ''}")
+        lines.append(
+            f"{idx}. {congrat.message}{suffix}{f' — {created}' if created else ''}"
+        )
 
-    await message.answer(
-        "📦 Твои поздравления:\n\n" + "\n\n".join(lines)
-    )
+    await message.answer("📦 Твои поздравления:\n\n" + "\n\n".join(lines))

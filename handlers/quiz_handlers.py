@@ -4,7 +4,13 @@ from aiogram import F, Router, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, PollAnswer, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    PollAnswer,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +30,9 @@ class CreateEventStates(StatesGroup):
 
 
 @quiz_router.message(Command("create_event"))
-async def start_create_event(message: Message, state: FSMContext, session: AsyncSession):
+async def start_create_event(
+    message: Message, state: FSMContext, session: AsyncSession
+):
     """
     Начало создания ивента
     """
@@ -46,11 +54,7 @@ async def start_create_event(message: Message, state: FSMContext, session: Async
 
 
 @quiz_router.message(CreateEventStates.waiting_for_photo, F.photo)
-async def process_event_photo(
-        message: Message,
-        state: FSMContext,
-        bot: Bot
-):
+async def process_event_photo(message: Message, state: FSMContext, bot: Bot):
     """
     Получаем фото и сохраняем file_id
     """
@@ -69,10 +73,7 @@ async def process_event_photo(
 
 
 @quiz_router.message(CreateEventStates.waiting_for_question)
-async def process_event_question(
-        message: Message,
-        state: FSMContext
-):
+async def process_event_question(message: Message, state: FSMContext):
     """
     Получаем вопрос для викторины
     """
@@ -90,14 +91,11 @@ async def process_event_question(
 
 
 @quiz_router.message(CreateEventStates.waiting_for_options)
-async def process_event_options(
-        message: Message,
-        state: FSMContext
-):
+async def process_event_options(message: Message, state: FSMContext):
     """
     Получаем варианты ответов
     """
-    options = [opt.strip() for opt in message.text.split('\n') if opt.strip()]
+    options = [opt.strip() for opt in message.text.split("\n") if opt.strip()]
 
     if len(options) < 2:
         await message.answer("❌ Нужно минимум 2 варианта ответа")
@@ -106,25 +104,25 @@ async def process_event_options(
     await state.update_data(options=options)
 
     # Создаем клавиатуру для выбора правильного варианта
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=option, callback_data=f"correct_{i}")]
-        for i, option in enumerate(options)
-    ])
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=option, callback_data=f"correct_{i}")]
+            for i, option in enumerate(options)
+        ]
+    )
 
     await message.answer(
-        "✅ Варианты сохранены!\n\n"
-        "🎯 Теперь выбери ПРАВИЛЬНЫЙ вариант:",
-        reply_markup=keyboard
+        "✅ Варианты сохранены!\n\n" "🎯 Теперь выбери ПРАВИЛЬНЫЙ вариант:",
+        reply_markup=keyboard,
     )
     await state.set_state(CreateEventStates.waiting_for_correct_option)
 
 
-@quiz_router.callback_query(CreateEventStates.waiting_for_correct_option, F.data.startswith("correct_"))
+@quiz_router.callback_query(
+    CreateEventStates.waiting_for_correct_option, F.data.startswith("correct_")
+)
 async def create_and_send_quiz(
-        callback: CallbackQuery,
-        state: FSMContext,
-        session: AsyncSession,
-        bot: Bot
+    callback: CallbackQuery, state: FSMContext, session: AsyncSession, bot: Bot
 ):
     """
     Создаем викторину и отправляем партнеру
@@ -147,42 +145,42 @@ async def create_and_send_quiz(
         return
 
     # 4. Получаем партнера
-    partner = await user_repo.get_user_by_id(data['partner_id'])
+    partner = await user_repo.get_user_by_id(data["partner_id"])
     if not partner:
         await callback.answer("❌ Партнер не найден", show_alert=True)
         await state.clear()
         return
 
     # 5. Отправляем фото партнеру если есть
-    if data.get('photo_file_id'):
+    if data.get("photo_file_id"):
         await bot.send_photo(
             chat_id=partner.telegram_id,
-            photo=data['photo_file_id'],
-            caption="🎬 Вспомни, когда это было?"
+            photo=data["photo_file_id"],
+            caption="🎬 Вспомни, когда это было?",
         )
 
     # 6. Создаем и отправляем викторину
     try:
         poll_msg = await bot.send_poll(
             chat_id=partner.telegram_id,
-            question=data['question'],
-            options=data['options'],
+            question=data["question"],
+            options=data["options"],
             type="quiz",
             correct_option_id=option_id,
             is_anonymous=False,
-            open_period=6000  # 100 минут на ответ
+            open_period=6000,  # 100 минут на ответ
         )
 
         # 7. Сохраняем в БД
         await event_repo.create_event(
             creator_id=creator.id,
             partner_id=partner.id,
-            question=data['question'],
-            options=data['options'],
+            question=data["question"],
+            options=data["options"],
             correct_option_id=option_id,
             telegram_poll_id=poll_msg.poll.id,
-            photo_file_id=data.get('photo_file_id'),
-            explanation=f"Правильный ответ: {data['options'][option_id]}"
+            photo_file_id=data.get("photo_file_id"),
+            explanation=f"Правильный ответ: {data['options'][option_id]}",
         )
 
         # 8. Уведомляем создателя
@@ -229,36 +227,41 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
 
         # 3. Проверяем ответ
         user_answer = poll_answer.option_ids[0] if poll_answer.option_ids else None
-        is_correct = (user_answer == event.correct_option_id)
+        is_correct = user_answer == event.correct_option_id
 
         # 4. Отправляем сообщения
         if is_correct:
             await bot.send_message(
                 chat_id=creator.telegram_id,
                 text=f"🎯 {poll_answer.user.first_name} правильно угадал!\n"
-                     f"Теперь ты должен создать послание командой /congratulate"
+                f"Теперь ты должен создать послание командой /congratulate",
             )
 
             # 5. Обновляем статус
-            update_stmt = update(Event).where(Event.id == event.id).values(is_completed=True)
+            update_stmt = (
+                update(Event).where(Event.id == event.id).values(is_completed=True)
+            )
             await session.execute(update_stmt)
             await session.commit()
 
             await bot.send_message(
                 chat_id=poll_answer.user.id,
-                text="✅ Правильно! Теперь твой партнер должен создать послание"
+                text="✅ Правильно! Теперь твой партнер должен создать послание",
             )
         else:
             # Получаем правильный вариант текста
-            correct_option_text = event.options[event.correct_option_id] if event.options else str(
-                event.correct_option_id)
+            correct_option_text = (
+                event.options[event.correct_option_id]
+                if event.options
+                else str(event.correct_option_id)
+            )
             await bot.send_message(
                 chat_id=poll_answer.user.id,
                 text=f"❌ Неправильно. Правильный ответ - {correct_option_text}\n"
-                     f"Теперь ты должен создать послание командой /congratulate"
+                f"Теперь ты должен создать послание командой /congratulate",
             )
             await bot.send_message(
                 chat_id=creator.telegram_id,
                 text=f"🎯 {poll_answer.user.first_name} ответил(а) не правильно!\n"
-                     f"Теперь он создаст послание"
+                f"Теперь он создаст послание",
             )

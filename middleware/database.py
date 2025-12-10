@@ -1,8 +1,9 @@
-from typing import Callable, Dict, Any, Awaitable
+from typing import Any, Awaitable, Callable, Dict
+
 from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery
-from sqlalchemy.ext.asyncio import AsyncSession
+from aiogram.types import CallbackQuery, Message
 from database.database import async_session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class DatabaseMiddleware(BaseMiddleware):
@@ -11,15 +12,15 @@ class DatabaseMiddleware(BaseMiddleware):
     """
 
     async def __call__(
-            self,
-            handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
-            event: Any,  # Любой тип события
-            data: Dict[str, Any]
+        self,
+        handler: Callable[[Any, Dict[str, Any]], Awaitable[Any]],
+        event: Any,  # Любой тип события
+        data: Dict[str, Any],
     ) -> Any:
         # Создаем новую сессию для каждого запроса
         async with async_session() as session:
             # Добавляем сессию в data (будет доступна в хэндлере)
-            data['session'] = session
+            data["session"] = session
 
             try:
                 # Вызываем хэндлер
