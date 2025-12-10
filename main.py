@@ -23,8 +23,8 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="help", description="📖 Правила игры"),
         BotCommand(command="create_event", description="🎮 Создать воспоминание"),
         BotCommand(command="partner", description="👫 Выбрать партнёра"),
-        BotCommand(command="congratulate", description="💌 Написать поздравление"),
-        BotCommand(command="my_congratulations", description="📦 Мои поздравления"),
+        BotCommand(command="congratulate", description="💌 Написать послание"),
+        BotCommand(command="my_congratulations", description="📦 Мои послания"),
     ]
     logger.info(f"Setting commands: {commands}")
     try:
@@ -65,7 +65,7 @@ async def main():
     dp.include_router(user_router)  # 1. Основные команды (/start, /help, /partner)
     dp.include_router(quiz_router)  # 2. Викторины
     dp.include_router(congratulation_router)  # 3. Поздравления
-    dp.include_router(other_router)  # 4. Все остальное
+    dp.include_router(other_router)  # 4. "Эхо в ответ"
 
     # Устанавливаем команды бота
     try:

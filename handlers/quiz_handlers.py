@@ -4,7 +4,8 @@ from aiogram import F, Router, Bot
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, PollAnswer, PhotoSize, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, PollAnswer, InlineKeyboardMarkup, InlineKeyboardButton
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import Event, User
@@ -209,8 +210,6 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
     """
     Обработчик ответов на викторину
     """
-    from sqlalchemy import select, update
-
     async with async_session() as session:
         # 1. Находим событие по ID викторины
         stmt = select(Event).where(Event.telegram_poll_id == poll_answer.poll_id)
@@ -247,7 +246,7 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
 
             await bot.send_message(
                 chat_id=poll_answer.user.id,
-                text=f"✅ Правильно! Теперь твой партнер должен создать поздравление"
+                text="✅ Правильно! Теперь твой партнер должен создать послание"
             )
         else:
             # Получаем правильный вариант текста
@@ -256,5 +255,10 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
             await bot.send_message(
                 chat_id=poll_answer.user.id,
                 text=f"❌ Неправильно. Правильный ответ - {correct_option_text}\n"
-                     f"Теперь ты должен создать поздравление командой /congratulate"
+                     f"Теперь ты должен создать послание командой /congratulate"
+            )
+            await bot.send_message(
+                chat_id=creator.telegram_id,
+                text=f"🎯 {poll_answer.user.first_name} ответил(а) не правильно!\n"
+                     f"Теперь он создаст послание"
             )

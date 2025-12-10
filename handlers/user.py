@@ -112,7 +112,7 @@ async def process_my_congratulations(message: Message, session: AsyncSession):
     congrats = await congr_repo.list_by_sender(user.id)
 
     if not congrats:
-        await message.answer("У тебя пока нет поздравлений. Добавь первое через /congratulate")
+        await message.answer("У тебя пока нет посланий. Добавь первое через /congratulate")
         return
 
     lines = []
