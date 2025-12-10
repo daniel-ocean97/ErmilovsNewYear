@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .models import Congratulation, Event, User
+from .database import async_session
 
 
 class UserRepository:
@@ -126,3 +127,26 @@ class CongratulationRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+
+# ===== Utils for broadcast =====
+async def get_all_chat_ids() -> list[int]:
+    """Вернуть все telegram_id пользователей для рассылки."""
+    async with async_session() as session:
+        result = await session.execute(select(User.telegram_id))
+        # scalars() возвращает генератор, превращаем в список
+        return list(result.scalars().all())
+
+
+async def remove_chat_id(chat_id: int) -> None:
+    """
+    Удалить пользователя из рассылки.
+    Если есть внешние связи, просто пропускаем ошибку, чтобы не падать при рассылке.
+    """
+    async with async_session() as session:
+        try:
+            await session.execute(delete(User).where(User.telegram_id == chat_id))
+            await session.commit()
+        except Exception:
+            # Не ломаем поток уведомлений, логирование можно добавить позже
+            await session.rollback()
