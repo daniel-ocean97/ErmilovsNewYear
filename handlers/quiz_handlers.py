@@ -118,67 +118,6 @@ async def process_event_options(
     await state.set_state(CreateEventStates.waiting_for_correct_option)
 
 
-# @quiz_router.message(CreateEventStates.waiting_for_date)
-# async def process_event_date(message: Message, state: FSMContext, session: AsyncSession, bot: Bot):
-#     try:
-#         correct_date = datetime.strptime(message.text, "%d.%m.%Y")
-#         data = await state.get_data()
-#
-#         event_repo = EventRepository(session)
-#         user_repo = UserRepository(session)
-#
-#         # 1. Получаем текущего пользователя (создателя) по telegram_id
-#         creator = await user_repo.get_user(message.from_user.id)
-#         if not creator:
-#             await message.answer("❌ Пользователь не найден. Используйте /start")
-#             await state.clear()
-#             return
-#
-#         # 2. Получаем партнера
-#         partner = await user_repo.get_user_by_id(data['partner_id'])
-#         if not partner:
-#             await message.answer("❌ Партнер не найден")
-#             await state.clear()
-#             return
-#
-#         # 3. Отправляем фото партнеру если есть
-#         if data.get('photo_file_id'):
-#             await bot.send_photo(
-#                 chat_id=partner.telegram_id,  # Используем telegram_id партнера
-#                 photo=data['photo_file_id'],
-#                 caption="🎬 Вспомни, когда это было?"
-#             )
-#
-#         # 4. Создаем викторину
-#         poll_msg = await bot.send_poll(
-#             chat_id=partner.telegram_id,  # Используем telegram_id партнера
-#             question=data['question'],
-#             options=data['options'],
-#             type="quiz",
-#             correct_option_id=data['correct_option_id'],
-#             explanation=f"Правильная дата: {correct_date.strftime('%d.%m.%Y')}",
-#             is_anonymous=False
-#         )
-#
-#         # 5. Сохраняем в БД с ID пользователя, а не telegram_id
-#         event = await event_repo.create_event(
-#             creator_id=creator.id,  # Используем id пользователя из БД
-#             partner_id=partner.id,  # Используем id партнера из БД
-#             question=data['question'],
-#             options=data['options'],
-#             correct_option_id=data['correct_option_id'],
-#             correct_date=correct_date,
-#             telegram_poll_id=poll_msg.poll.id,
-#             photo_file_id=data.get('photo_file_id'),
-#             explanation=f"Правильная дата: {correct_date.strftime('%d.%m.%Y')}"
-#         )
-#
-#         await message.answer(f"✅ Викторина отправлена {partner.first_name}!")
-#         await state.clear()
-#
-#     except ValueError:
-#         await message.answer("❌ Неверный формат даты. Используйте ДД.ММ.ГГГГ")
-
 @quiz_router.callback_query(CreateEventStates.waiting_for_correct_option, F.data.startswith("correct_"))
 async def create_and_send_quiz(
         callback: CallbackQuery,
@@ -230,11 +169,11 @@ async def create_and_send_quiz(
             type="quiz",
             correct_option_id=option_id,
             is_anonymous=False,
-            open_period=600  # 10 минут на ответ
+            open_period=6000  # 100 минут на ответ
         )
 
-        # 7. Сохраняем в БД БЕЗ ДАТЫ
-        event = await event_repo.create_event(
+        # 7. Сохраняем в БД
+        await event_repo.create_event(
             creator_id=creator.id,
             partner_id=partner.id,
             question=data['question'],
@@ -308,7 +247,7 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
 
             await bot.send_message(
                 chat_id=poll_answer.user.id,
-                text=f"✅ Правильно! Теперь создай поздравление командой /congratulate"
+                text=f"✅ Правильно! Теперь твой партнер должен создать поздравление"
             )
         else:
             # Получаем правильный вариант текста

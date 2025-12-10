@@ -71,10 +71,14 @@ async def process_user_shared(message: Message, session: AsyncSession):
         user_id=message.from_user.id,
         partner_telegram_id=message.user_shared.user_id
     )
+    partner_succes = await user_repo.set_partner(
+        user_id=message.user_shared.user_id,
+        partner_telegram_id=message.from_user.id
+    )
 
-    if success:
+    if success and partner_succes:
         await message.answer(
-            text='Отлично! Партнер сохранен в базе данных 🎯',
+            text=f'Отлично! Теперь {message.user_shared.first_name} ваш партнер в этой игре 🎯',
             reply_markup=types.ReplyKeyboardRemove()
         )
 
@@ -83,13 +87,13 @@ async def process_user_shared(message: Message, session: AsyncSession):
             await message.bot.send_message(
                 chat_id=message.user_shared.user_id,
                 text=f"🎉 {message.from_user.first_name} выбрал(а) вас своим партнером "
-                     f"для подведения итогов года! Для начала приключения используй /start"
+                     f"для подведения итогов года! Для начала приключения используй /create_event"
             )
         except Exception as e:
             print(f"Не удалось отправить сообщение партнеру: {e}")
     else:
         await message.answer(
-            text='Партнер не найден в базе данных. Попросите его начать с /start',
+            text='Партнер не найден в базе данных. Отправте ссылку на бота и попросите его начать с /start',
             reply_markup=types.ReplyKeyboardRemove()
         )
 
