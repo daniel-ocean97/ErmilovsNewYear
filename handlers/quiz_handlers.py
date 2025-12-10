@@ -237,7 +237,7 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
             await bot.send_message(
                 chat_id=creator.telegram_id,
                 text=f"🎯 {poll_answer.user.first_name} правильно угадал!\n"
-                     f"Теперь ты должен создать поздравление командой /congratulate"
+                     f"Теперь ты должен создать послание командой /congratulate"
             )
 
             # 5. Обновляем статус

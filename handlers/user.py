@@ -86,7 +86,7 @@ async def process_user_shared(message: Message, session: AsyncSession):
         try:
             await message.bot.send_message(
                 chat_id=message.user_shared.user_id,
-                text=f"🎉 {message.from_user.first_name} выбрал(а) вас своим партнером "
+                text=f"🎉 {message.from_user.first_name} теперь ваш партнер в этой игре "
                      f"для подведения итогов года! Для начала приключения используй /create_event"
             )
         except Exception as e:
