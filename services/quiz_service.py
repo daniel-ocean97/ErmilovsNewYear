@@ -4,7 +4,7 @@ from aiogram.types import (
     Poll,
     PollAnswer,
     InlineKeyboardMarkup,
-    InlineKeyboardButton
+    InlineKeyboardButton,
 )
 from typing import Optional
 import asyncio
@@ -15,15 +15,15 @@ class QuizService:
         self.bot = bot
 
     async def create_quiz(
-            self,
-            chat_id: int,
-            question: str,
-            options: list[str],
-            correct_option_id: int,
-            explanation: str = None,
-            photo_file_id: str = None,
-            is_anonymous: bool = False,
-            open_period: int = 300  # 5 минут на ответ
+        self,
+        chat_id: int,
+        question: str,
+        options: list[str],
+        correct_option_id: int,
+        explanation: str = None,
+        photo_file_id: str = None,
+        is_anonymous: bool = False,
+        open_period: int = 300,  # 5 минут на ответ
     ) -> Poll:
         """
         Создать викторину в Telegram
@@ -34,7 +34,7 @@ class QuizService:
                 photo_msg = await self.bot.send_photo(
                     chat_id=chat_id,
                     photo=photo_file_id,
-                    caption="🎬 Вспомни, когда это было?"
+                    caption="🎬 Вспомни, когда это было?",
                 )
                 await asyncio.sleep(1)  # Небольшая пауза
 
@@ -48,7 +48,7 @@ class QuizService:
                 explanation=explanation,
                 is_anonymous=is_anonymous,
                 open_period=open_period,
-                is_closed=False
+                is_closed=False,
             )
 
             return message.poll
@@ -58,36 +58,27 @@ class QuizService:
             raise
 
     async def check_quiz_answer(
-            self,
-            poll_answer: PollAnswer,
-            correct_option_id: int
+        self, poll_answer: PollAnswer, correct_option_id: int
     ) -> bool:
         """
         Проверить ответ на викторину
         """
         return poll_answer.option_ids[0] == correct_option_id
 
-    async def close_quiz(
-            self,
-            chat_id: int,
-            message_id: int
-    ):
+    async def close_quiz(self, chat_id: int, message_id: int):
         """
         Закрыть викторину
         """
-        await self.bot.stop_poll(
-            chat_id=chat_id,
-            message_id=message_id
-        )
+        await self.bot.stop_poll(chat_id=chat_id, message_id=message_id)
 
     async def create_and_save_quiz(
-            self,
-            chat_id: int,
-            question: str,
-            options: list[str],
-            correct_option_id: int,
-            explanation: str = None,
-            photo_file_id: str = None
+        self,
+        chat_id: int,
+        question: str,
+        options: list[str],
+        correct_option_id: int,
+        explanation: str = None,
+        photo_file_id: str = None,
     ) -> tuple[Poll, int]:
         """
         Создать викторину и вернуть (poll объект, message_id)
@@ -98,7 +89,7 @@ class QuizService:
                 await self.bot.send_photo(
                     chat_id=chat_id,
                     photo=photo_file_id,
-                    caption="🎬 Вспомни, когда это было?"
+                    caption="🎬 Вспомни, когда это было?",
                 )
                 await asyncio.sleep(1)
 
@@ -112,7 +103,7 @@ class QuizService:
                 explanation=explanation,
                 is_anonymous=False,  # Видим кто ответил
                 open_period=600,  # 10 минут
-                is_closed=False
+                is_closed=False,
             )
 
             # Возвращаем poll объект и message_id

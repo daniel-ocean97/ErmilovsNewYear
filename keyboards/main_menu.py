@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from lexicon.lexicon import LEXICON_COMMANDS
 
@@ -36,16 +36,14 @@ def get_main_menu_simple() -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(text=LEXICON_COMMANDS["/create_event"]),
-                KeyboardButton(text=LEXICON_COMMANDS["/partner"])
+                KeyboardButton(text=LEXICON_COMMANDS["/partner"]),
             ],
             [
                 KeyboardButton(text=LEXICON_COMMANDS["/congratulate"]),
-                KeyboardButton(text=LEXICON_COMMANDS["/help"])
+                KeyboardButton(text=LEXICON_COMMANDS["/help"]),
             ],
-            [
-                KeyboardButton(text=LEXICON_COMMANDS["/my_congratulations"])
-            ]
+            [KeyboardButton(text=LEXICON_COMMANDS["/my_congratulations"])],
         ],
         resize_keyboard=True,
-        one_time_keyboard=False  # Меню остается всегда видимым
+        one_time_keyboard=False,  # Меню остается всегда видимым
     )

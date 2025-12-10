@@ -1,5 +1,7 @@
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from config.config import Config, load_config
+from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
+                                    create_async_engine)
+
 from .models import Base
 
 config: Config = load_config()
@@ -13,7 +15,8 @@ engine = create_async_engine(
 # Создаем фабрику сессий
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
-__all__ = ['async_session', 'get_session', 'init_db']
+__all__ = ["async_session", "get_session", "init_db"]
+
 
 async def init_db():
     """Инициализация базы данных, создание таблиц"""
@@ -21,11 +24,11 @@ async def init_db():
         # Создаем все таблицы, если их нет
         await conn.run_sync(Base.metadata.create_all)
 
+
 async def get_session() -> AsyncSession:
     """Получение сессии для работы с базой данных"""
     async with async_session() as session:
         yield session
 
 
-
-__all__ = ['async_session', 'get_session', 'init_db']
+__all__ = ["async_session", "get_session", "init_db"]

@@ -8,6 +8,7 @@ from database.repository import CongratulationRepository
 from middleware.congratulations import UserCheckMiddleware
 from database.models import User
 from sqlalchemy import select
+
 congratulation_router = Router()
 congratulation_router.message.middleware(UserCheckMiddleware())
 
@@ -31,9 +32,7 @@ async def start_congratulation(message: types.Message, state: FSMContext):
 
 @congratulation_router.message(CongratulationStates.waiting_for_message)
 async def process_congratulation_message(
-        message: types.Message,
-        state: FSMContext,
-        session: AsyncSession
+    message: types.Message, state: FSMContext, session: AsyncSession
 ):
     """
     Сохраняем текст поздравления и спрашиваем про фото
@@ -53,14 +52,12 @@ async def process_congratulation_message(
 
 @congratulation_router.message(CongratulationStates.waiting_for_photo, Command("skip"))
 async def skip_congratulation_photo(
-        message: types.Message,
-        state: FSMContext,
-        session: AsyncSession
+    message: types.Message, state: FSMContext, session: AsyncSession
 ):
     """Самый простой вариант без middleware"""
     # 1. Получаем текст
     data = await state.get_data()
-    congrat_text = data.get('message', '')
+    congrat_text = data.get("message", "")
 
     if not congrat_text:
         await message.answer("❌ Текст не найден")
@@ -80,10 +77,9 @@ async def skip_congratulation_photo(
 
     # 3. Сохраняем
     from database.models import Congratulation
+
     congrat = Congratulation(
-        sender_id=user.id,
-        message=congrat_text,
-        photo_file_id=None
+        sender_id=user.id, message=congrat_text, photo_file_id=None
     )
     session.add(congrat)
     await session.commit()
@@ -94,16 +90,16 @@ async def skip_congratulation_photo(
 
 @congratulation_router.message(CongratulationStates.waiting_for_photo, F.photo)
 async def process_congratulation_photo(
-        message: types.Message,
-        state: FSMContext,
-        session: AsyncSession,
+    message: types.Message,
+    state: FSMContext,
+    session: AsyncSession,
 ):
     """
     Сохраняем фото и поздравление
     """
     # Получаем данные из состояния
     data = await state.get_data()
-    congrat_text = data.get('message', '')
+    congrat_text = data.get("message", "")
 
     # 2. Находим пользователя ПРОСТЫМ ЗАПРОСОМ
 
@@ -123,14 +119,11 @@ async def process_congratulation_photo(
     # Сохраняем в БД
     congrat_repo = CongratulationRepository(session)
     congrat = await congrat_repo.create_congratulation(
-        sender_id=user.id,
-        message=congrat_text,
-        photo_file_id=photo_file_id
+        sender_id=user.id, message=congrat_text, photo_file_id=photo_file_id
     )
 
     await message.answer(
-        "🎊 Поздравление с фото сохранено!\n\n"
-        f"Ваш текст: {congrat_text}"
+        "🎊 Поздравление с фото сохранено!\n\n" f"Ваш текст: {congrat_text}"
     )
 
     await state.clear()
