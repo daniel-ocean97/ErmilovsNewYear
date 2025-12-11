@@ -255,6 +255,13 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
                 if event.options
                 else str(event.correct_option_id)
             )
+            user_answer_text = (
+                event.options[user_answer]
+                if event.options
+                and user_answer is not None
+                and 0 <= user_answer < len(event.options)
+                else str(user_answer)
+            )
             await bot.send_message(
                 chat_id=poll_answer.user.id,
                 text=f"❌ Неправильно. Правильный ответ - {correct_option_text}\n"
@@ -263,6 +270,6 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
             await bot.send_message(
                 chat_id=creator.telegram_id,
                 text=f"🎯 {poll_answer.user.first_name} ответил(а) не правильно!\n"
-                f"{poll_answer.user.first_name} овтетил(а) {user_answer}"
+                f"{poll_answer.user.first_name} овтетил(а) {user_answer_text}"
                 f"Теперь он(a) создаст послание на будущий год",
             )
