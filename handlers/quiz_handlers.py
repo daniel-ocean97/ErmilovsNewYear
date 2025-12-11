@@ -263,5 +263,6 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
             await bot.send_message(
                 chat_id=creator.telegram_id,
                 text=f"🎯 {poll_answer.user.first_name} ответил(а) не правильно!\n"
-                f"Теперь он создаст послание",
+                f"{poll_answer.user.first_name} овтетил(а) {user_answer}"
+                f"Теперь он(a) создаст послание на будущий год",
             )
