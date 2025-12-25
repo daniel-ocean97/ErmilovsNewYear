@@ -150,3 +150,76 @@ async def remove_chat_id(chat_id: int) -> None:
         except Exception:
             # Не ломаем поток уведомлений, логирование можно добавить позже
             await session.rollback()
+
+
+async def get_all_partner_pairs() -> list[dict]:
+    """
+    Получить все пары партнеров с их поздравлениями.
+    Возвращает список словарей с информацией о паре и поздравлениях.
+    Учитывает только взаимные пары (когда оба пользователя выбрали друг друга).
+    """
+    async with async_session() as session:
+        # Получаем всех пользователей с партнерами
+        stmt = select(User).where(User.partner_id.isnot(None))
+        result = await session.execute(stmt)
+        users = result.scalars().all()
+        
+        pairs = []
+        processed_pairs = set()  # Чтобы не дублировать пары
+        
+        for user in users:
+            if user.id in processed_pairs:
+                continue
+                
+            partner = await session.get(User, user.partner_id)
+            if not partner:
+                continue
+            
+            # Проверяем, что партнер тоже выбрал этого пользователя (взаимная пара)
+            if partner.partner_id != user.id:
+                continue
+            
+            # Получаем поздравления от пользователя к партнеру
+            user_congrats_stmt = select(Congratulation).where(
+                Congratulation.sender_id == user.id
+            )
+            user_congrats_result = await session.execute(user_congrats_stmt)
+            user_congrats = list(user_congrats_result.scalars().all())
+            
+            # Получаем поздравления от партнера к пользователю
+            partner_congrats_stmt = select(Congratulation).where(
+                Congratulation.sender_id == partner.id
+            )
+            partner_congrats_result = await session.execute(partner_congrats_stmt)
+            partner_congrats = list(partner_congrats_result.scalars().all())
+            
+            pairs.append({
+                "user1": {
+                    "telegram_id": user.telegram_id,
+                    "first_name": user.first_name,
+                    "congratulations": [
+                        {
+                            "message": c.message,
+                            "photo_file_id": c.photo_file_id
+                        }
+                        for c in user_congrats
+                    ]
+                },
+                "user2": {
+                    "telegram_id": partner.telegram_id,
+                    "first_name": partner.first_name,
+                    "congratulations": [
+                        {
+                            "message": c.message,
+                            "photo_file_id": c.photo_file_id
+                        }
+                        for c in partner_congrats
+                    ]
+                }
+            })
+            
+            # Помечаем обе стороны пары как обработанные
+            processed_pairs.add(user.id)
+            processed_pairs.add(partner.id)
+        
+        return pairs
