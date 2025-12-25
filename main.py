@@ -18,6 +18,9 @@ from handlers.quiz_handlers import quiz_router
 from middleware.database import DatabaseMiddleware
 from database.repository import get_all_chat_ids, remove_chat_id
 
+# Импортируем планировщик
+from newyear_sheduler import init_scheduler, scheduler
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +44,9 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="partner", description="👫 Выбрать партнёра"),
         BotCommand(command="congratulate", description="💌 Написать послание"),
         BotCommand(command="my_congratulations", description="📦 Мои послания"),
+        # Добавляем команду для теста планировщика (только админу)
+        BotCommand(command="test_schedule", description="🧪 Тест отправки (admin)"),
+        BotCommand(command="schedule_info", description="📊 Инфо о планировщике (admin)"),
     ]
     logger.info(f"Setting commands: {commands}")
     try:
@@ -85,6 +91,11 @@ async def main():
     dp.include_router(congratulation_router)  # 3. Поздравления
     dp.include_router(other_router)  # 4. "Эхо в ответ"
 
+    # ИНИЦИАЛИЗИРУЕМ ПЛАНИРОВЩИК
+    logger.info("Инициализация новогоднего планировщика...")
+    await init_scheduler(bot)
+    logger.info("Планировщик инициализирован")
+
     # Устанавливаем команды бота
     try:
         await set_bot_commands(bot)
@@ -93,12 +104,19 @@ async def main():
         logger.warning(f"Could not set bot commands: {e}")
 
     await bot.delete_webhook(drop_pending_updates=True)
+    
     # Оповещение всех пользователей об обновлении
     # await notify_all(
     #     bot,
     #     "🎉 Вышло обновление!\nТеперь при неправильном ответе партнера, создателю приходит какой вариант был выбран",
     # )
+    
+    # Запускаем поллинг
+    logger.info("Бот запущен и готов к работе!")
     await dp.start_polling(bot)
+    
+    # При завершении работы очищаем ресурсы планировщика
+    await scheduler.cleanup()
 
 
 if __name__ == "__main__":

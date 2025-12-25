@@ -18,6 +18,13 @@ class DatabaseConfig:
 
 
 @dataclass
+class RedisConfig:
+    host: str
+    port: int
+    db: int
+
+
+@dataclass
 class LogSettings:
     level: str
     format: str
@@ -27,6 +34,7 @@ class LogSettings:
 class Config:
     bot: TgBot
     db: DatabaseConfig
+    redis: RedisConfig
     log: LogSettings
 
 
@@ -41,6 +49,11 @@ def load_config(path: str | None = None) -> Config:
             user=env("DB_USER", "postgres"),
             password=env("DB_PASSWORD", ""),
             database=env("DB_NAME", "year_summary_bot"),
+        ),
+        redis=RedisConfig(
+            host=env("REDIS_HOST", "localhost"),
+            port=env.int("REDIS_PORT", 6379),
+            db=env.int("REDIS_DB", 0),
         ),
         log=LogSettings(level=env("LOG_LEVEL"), format=env("LOG_FORMAT")),
     )

@@ -48,7 +48,7 @@ async def start_create_event(
     await message.answer(
         "📸 Пришли фотографию для этого воспоминания\n\n"
         "Это может быть любое фото, сделанное в этом году"
-        "и о котором он должен будет угадать дату."
+        "и о котором он должен будет ответить на твой вопрос."
     )
     await state.set_state(CreateEventStates.waiting_for_photo)
 
@@ -83,9 +83,9 @@ async def process_event_question(message: Message, state: FSMContext):
         "📋 Теперь введи варианты ответов\n\n"
         "Формат: каждый вариант с новой строки\n"
         "Пример:\n"
-        "17 июня\n"
-        "27 июня\n"
-        "13 июля\n"
+        "Первый вариант\n"
+        "Второй вариант\n"
+        "Третий вариант\n"
     )
     await state.set_state(CreateEventStates.waiting_for_options)
 
@@ -269,6 +269,6 @@ async def handle_quiz_answer(poll_answer: PollAnswer, bot: Bot):
             )
             await bot.send_message(
                 chat_id=creator.telegram_id,
-                text=f"🎯 {poll_answer.user.first_name} овтетил(а) {user_answer_text}\n"
+                text=f"🎯 {poll_answer.user.first_name} овтетил(а) - {user_answer_text}\n"
                 f"Теперь он(a) создаст послание на будущий год",
             )
